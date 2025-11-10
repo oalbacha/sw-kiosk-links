@@ -9,30 +9,30 @@
     "linkId": "2",
     "linkUrl": "https://www.nhs.uk/nhs-app",
     "linkTitle": "NHS App",
-    "category": "nhs_app"
+    "category": "Home"
   },
   {
     "linkId": "3",
     "linkUrl": "https://www.suttonswharfhealthcentre.nhs.uk/",
     "linkTitle": "Our website",
-    "category": "practice_website"
+    "category": "Home"
   },
   {
     "linkId": "4",
     "linkUrl": "https://www.suttonswharfhealthcentre.nhs.uk/clinics-and-services/student-services/",
     "linkTitle": "QMUL Students",
-    "category": "student_services"
+    "category": "Home"
   },
   {
     "linkId": "5",
     "linkUrl": "https://www.suttonswharfhealthcentre.nhs.uk/clinics-and-services/appointments-tests-referrals/referral-for-further-care/",
     "linkTitle": "NHS self referral",
-    "category": "nhs_self_referral"
+    "category": "Home"
   },
   {
     "linkId": "6",
     "linkUrl": "https://www.suttonswharfhealthcentre.nhs.uk/about-us/have-your-say/friends-and-family-test/",
     "linkTitle": "Feedback & Surveys",
-    "category": "feedback"
+    "category": "Home"
   }
 ]
