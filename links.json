@@ -2,7 +2,8 @@
   {
     "linkId": "1",
     "linkUrl": "https://accurx.nhs.uk/patient-initiated/F84123",
-    "linkTitle": "home"
+    "linkTitle": "Clinical care Accurx",
+    "category": "home"
   },
   {
     "linkId": "2",
