@@ -209,11 +209,32 @@ export default async (request, context) => {
       }
 
       const allData = await store.list();
+      console.log("store.list() returned:", typeof allData, allData);
+      
       const analytics = {};
-      for (const entry of allData.entries) {
-        const count = await store.get(entry.key);
-        analytics[entry.key] = parseInt(count) || 0;
+      
+      // Handle different return types from store.list()
+      let entries = [];
+      if (Array.isArray(allData)) {
+        entries = allData;
+      } else if (allData && allData.entries && Array.isArray(allData.entries)) {
+        entries = allData.entries;
+      } else if (allData && typeof allData[Symbol.iterator] === 'function') {
+        entries = Array.from(allData);
+      } else {
+        console.warn("Unexpected allData format:", allData);
+        entries = [];
       }
+      
+      console.log("Processing entries, count:", entries.length);
+      
+      for (const entry of entries) {
+        const key = entry.key || entry;
+        const count = await store.get(key);
+        analytics[key] = parseInt(count) || 0;
+      }
+      
+      console.log("Analytics data prepared:", analytics);
       return Response.json(analytics);
     } catch (error) {
       console.error("Error in GET /api/analytics:", error);
