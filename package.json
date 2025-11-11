@@ -1,9 +1,12 @@
 {
   "name": "sw-kiosk-links",
   "version": "1.0.0",
+  "type": "module",
   "description": "",
-  "main": "index.js",
   "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -18,6 +21,15 @@
   },
   "homepage": "https://github.com/oalbacha/sw-kiosk-links#readme",
   "dependencies": {
-    "@netlify/blobs": "^10.3.3"
+    "@clerk/clerk-react": "^5.0.0",
+    "@netlify/blobs": "^10.3.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.4.0"
   }
 }
