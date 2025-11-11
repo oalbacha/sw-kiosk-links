@@ -5,12 +5,19 @@ const CLERK_SECRET_KEY = Netlify.env.get("CLERK_SECRET_KEY") || "";
 
 // Helper to decode base64 in edge functions
 function base64Decode(str) {
-  // Edge functions support atob, but handle it safely
+  // Edge functions support atob
+  // JWT base64url encoding uses - and _ instead of + and /
   try {
-    return atob(str.replace(/-/g, "+").replace(/_/g, "/"));
+    // First try direct atob (standard base64)
+    return atob(str);
   } catch (e) {
-    console.error("Base64 decode error:", e);
-    throw e;
+    // If that fails, try base64url decoding
+    try {
+      return atob(str.replace(/-/g, "+").replace(/_/g, "/"));
+    } catch (e2) {
+      console.error("Base64 decode error:", e2);
+      throw e2;
+    }
   }
 }
 
@@ -139,74 +146,90 @@ export default async (request, context) => {
     await store.set(linkId, count + 1);
     return new Response("OK");
   } else if (request.method === "GET") {
-    // GET requires authentication (API key or Clerk)
-    const authHeader = request.headers.get("authorization");
-    const token = authHeader?.startsWith("Bearer ")
-      ? authHeader.substring(7)
-      : null;
+    try {
+      // GET requires authentication (API key or Clerk)
+      const authHeader = request.headers.get("authorization");
+      const token = authHeader?.startsWith("Bearer ")
+        ? authHeader.substring(7)
+        : null;
 
-    console.log("GET /api/analytics - Auth check:", {
-      hasApiKey: !!request.headers.get("x-api-key"),
-      hasAuthHeader: !!authHeader,
-      hasToken: !!token,
-      tokenLength: token?.length || 0,
-      tokenPreview: token ? token.substring(0, 30) + "..." : null,
-    });
-
-    const authenticated = await isAuthenticated(request, context);
-    if (!authenticated) {
-      // Log detailed failure info
-      console.log("Auth check failed - detailed:", {
+      console.log("GET /api/analytics - Auth check:", {
         hasApiKey: !!request.headers.get("x-api-key"),
         hasAuthHeader: !!authHeader,
         hasToken: !!token,
         tokenLength: token?.length || 0,
         tokenPreview: token ? token.substring(0, 30) + "..." : null,
-        hasClerkSecret: !!CLERK_SECRET_KEY,
       });
 
-      // Try to decode token to see what's wrong
-      if (token) {
-        try {
-          const parts = token.split(".");
-          if (parts.length === 3) {
-            const payload = JSON.parse(atob(parts[1]));
-            console.log("Failed token payload:", {
-              sub: payload.sub,
-              exp: payload.exp,
-              iss: payload.iss,
-              now: Math.floor(Date.now() / 1000),
-              expired: payload.exp
-                ? payload.exp < Math.floor(Date.now() / 1000)
-                : "no exp",
-            });
+      const authenticated = await isAuthenticated(request, context);
+      if (!authenticated) {
+        // Log detailed failure info
+        console.log("Auth check failed - detailed:", {
+          hasApiKey: !!request.headers.get("x-api-key"),
+          hasAuthHeader: !!authHeader,
+          hasToken: !!token,
+          tokenLength: token?.length || 0,
+          tokenPreview: token ? token.substring(0, 30) + "..." : null,
+          hasClerkSecret: !!CLERK_SECRET_KEY,
+        });
+
+        // Try to decode token to see what's wrong
+        if (token) {
+          try {
+            const parts = token.split(".");
+            if (parts.length === 3) {
+              const payload = JSON.parse(atob(parts[1]));
+              console.log("Failed token payload:", {
+                sub: payload.sub,
+                exp: payload.exp,
+                iss: payload.iss,
+                now: Math.floor(Date.now() / 1000),
+                expired: payload.exp
+                  ? payload.exp < Math.floor(Date.now() / 1000)
+                  : "no exp",
+              });
+            }
+          } catch (e) {
+            console.error("Could not decode failed token:", e);
           }
-        } catch (e) {
-          console.error("Could not decode failed token:", e);
         }
+
+        return new Response(
+          JSON.stringify({
+            error: "Unauthorized",
+            message: CLERK_SECRET_KEY
+              ? "Invalid or expired token"
+              : "CLERK_SECRET_KEY not configured",
+          }),
+          {
+            status: 401,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
       }
 
+      const allData = await store.list();
+      const analytics = {};
+      for (const entry of allData.entries) {
+        const count = await store.get(entry.key);
+        analytics[entry.key] = parseInt(count) || 0;
+      }
+      return Response.json(analytics);
+    } catch (error) {
+      console.error("Error in GET /api/analytics:", error);
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
       return new Response(
         JSON.stringify({
-          error: "Unauthorized",
-          message: CLERK_SECRET_KEY
-            ? "Invalid or expired token"
-            : "CLERK_SECRET_KEY not configured",
+          error: "Internal Server Error",
+          message: error.message || "An error occurred",
         }),
         {
-          status: 401,
+          status: 500,
           headers: { "Content-Type": "application/json" },
         }
       );
     }
-
-    const allData = await store.list();
-    const analytics = {};
-    for (const entry of allData.entries) {
-      const count = await store.get(entry.key);
-      analytics[entry.key] = parseInt(count) || 0;
-    }
-    return Response.json(analytics);
   }
 
   return new Response("Method not allowed", { status: 405 });
