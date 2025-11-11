@@ -144,10 +144,20 @@ export default async (request, context) => {
     }
     const currentValue = await store.get(linkId);
     // Parse as integer to ensure numeric addition, not string concatenation
-    let count = currentValue !== null && currentValue !== undefined 
-      ? parseInt(currentValue, 10) || 0 
-      : 0;
-    await store.set(linkId, count + 1);
+    // Handle both string and number types from the store
+    let count = 0;
+    if (currentValue !== null && currentValue !== undefined) {
+      if (typeof currentValue === 'number') {
+        count = currentValue;
+      } else if (typeof currentValue === 'string') {
+        count = parseInt(currentValue, 10) || 0;
+      } else {
+        count = Number(currentValue) || 0;
+      }
+    }
+    const newCount = count + 1;
+    console.log(`Incrementing linkId ${linkId}: ${count} -> ${newCount}`);
+    await store.set(linkId, newCount);
     return new Response("OK");
   } else if (request.method === "GET") {
     try {
