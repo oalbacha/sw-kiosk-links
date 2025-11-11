@@ -2,13 +2,38 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="0; url=links.json">
-    <title>Redirecting to links.json</title>
+    <title>Redirecting...</title>
+    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 </head>
 <body>
-    <p>Redirecting to <a href="links.json">links.json</a>...</p>
+    <p>Redirecting...</p>
     <script>
-        window.location.href = 'links.json';
+        // Check if this is a Netlify Identity callback (invite, login, etc.)
+        const hash = window.location.hash;
+        const isIdentityCallback = hash.includes('invite_token') || 
+                                   hash.includes('access_token') || 
+                                   hash.includes('error') ||
+                                   hash.includes('confirmation_token');
+        
+        if (isIdentityCallback) {
+            // Initialize Identity and redirect to analytics page to handle the callback
+            if (window.netlifyIdentity) {
+                window.netlifyIdentity.init();
+                // Redirect to analytics page which has the Identity widget set up
+                window.location.href = '/analytics.html' + hash;
+            } else {
+                // Wait for Identity to load
+                window.addEventListener('load', function() {
+                    if (window.netlifyIdentity) {
+                        window.netlifyIdentity.init();
+                        window.location.href = '/analytics.html' + hash;
+                    }
+                });
+            }
+        } else {
+            // Normal redirect to links.json
+            window.location.href = 'links.json';
+        }
     </script>
 </body>
 </html>
