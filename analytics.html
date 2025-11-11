@@ -215,8 +215,11 @@
 
       <div class="content">
         <div id="loginContainer" class="login-container">
-          <h2>Please log in to view analytics</h2>
-          <p>You need to be authenticated to access the analytics data.</p>
+          <h2 id="loginTitle">Please log in to view analytics</h2>
+          <p id="loginMessage">You need to be authenticated to access the analytics data.</p>
+          <div id="inviteMessage" style="display: none; background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 20px; color: #1976d2;">
+            <strong>Setting up your account?</strong> Click the button below to set your password.
+          </div>
           <div
             style="
               display: flex;
@@ -242,6 +245,7 @@
               Log In
             </button>
             <button
+              id="signupButton"
               onclick="if(window.netlifyIdentity) { window.netlifyIdentity.open('signup'); } else { alert('Netlify Identity is loading, please wait...'); }"
               style="
                 background: white;
@@ -255,7 +259,7 @@
                 transition: transform 0.2s;
               "
             >
-              Sign Up
+              Sign Up / Set Password
             </button>
           </div>
           <div id="netlify-identity-widget"></div>
@@ -289,38 +293,37 @@
     </div>
 
     <script>
-      // Check for invite token in URL
-      const hash = window.location.hash;
-      const hasInviteToken = hash.includes('invite_token') || hash.includes('confirmation_token');
-      
-      // Initialize Netlify Identity
+      // Initialize Netlify Identity - it will automatically handle invite tokens
       function initIdentity() {
         if (window.netlifyIdentity) {
-          // Initialize with the site URL
           window.netlifyIdentity.init();
 
           window.netlifyIdentity.on("init", (user) => {
-            // If there's an invite token, the widget should automatically process it
-            // Give it a moment to process, then check if we need to open it
-            if (hasInviteToken && !user) {
-              // The widget should automatically show the password setup form
-              // But if it doesn't, we'll open it after a short delay
-              setTimeout(() => {
-                if (!window.netlifyIdentity.currentUser()) {
-                  // Try opening signup to trigger the invite flow
-                  window.netlifyIdentity.open('signup');
-                }
-              }, 500);
-            } else if (user) {
+            if (user) {
               loadAnalytics();
             } else {
-              showLogin();
+              // Check if there's an invite token
+              const hash = window.location.hash;
+              if (hash.includes("invite_token") || hash.includes("confirmation_token")) {
+                // Show invite message and highlight signup button
+                document.getElementById("inviteMessage").style.display = "block";
+                document.getElementById("loginTitle").textContent = "Set up your account";
+                document.getElementById("loginMessage").textContent = "Click 'Sign Up / Set Password' below to complete your account setup.";
+                const signupBtn = document.getElementById("signupButton");
+                signupBtn.style.background = "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
+                signupBtn.style.color = "white";
+                signupBtn.style.border = "none";
+                
+                // Widget should auto-open, but if it doesn't, open it after a brief delay
+                setTimeout(() => {
+                  if (!window.netlifyIdentity.currentUser()) {
+                    window.netlifyIdentity.open("signup");
+                  }
+                }, 1500);
+              } else {
+                showLogin();
+              }
             }
-          });
-          
-          // Also listen for the invite event
-          window.netlifyIdentity.on("invite", () => {
-            // Widget is processing invite, it should show password form
           });
 
           window.netlifyIdentity.on("login", (user) => {
@@ -329,7 +332,6 @@
           });
 
           window.netlifyIdentity.on("signup", (user) => {
-            // After signup/password setup, close and load analytics
             window.netlifyIdentity.close();
             if (user) {
               loadAnalytics();
@@ -340,19 +342,15 @@
             showLogin();
           });
         } else {
-          // If widget hasn't loaded yet, wait for it
           setTimeout(initIdentity, 100);
         }
       }
 
-      // Start initialization
+      // Start initialization when script loads
       if (window.netlifyIdentity) {
         initIdentity();
       } else {
-        // Wait for script to load
-        window.addEventListener("load", function () {
-          initIdentity();
-        });
+        window.addEventListener("load", initIdentity);
       }
 
       function showLogin() {
