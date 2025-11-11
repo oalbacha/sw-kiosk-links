@@ -1,0 +1,44 @@
+export default async () => {
+  const links = [
+    {
+      linkId: "1",
+      linkUrl: "https://accurx.nhs.uk/patient-initiated/F84123",
+      linkTitle: "Clinical care Accurx",
+      category: "home",
+    },
+    {
+      linkId: "2",
+      linkUrl: "https://www.nhs.uk/nhs-app",
+      linkTitle: "NHS App",
+      category: "home",
+    },
+    {
+      linkId: "3",
+      linkUrl: "https://www.suttonswharfhealthcentre.nhs.uk/",
+      linkTitle: "Our website",
+      category: "home",
+    },
+    {
+      linkId: "4",
+      linkUrl:
+        "https://www.suttonswharfhealthcentre.nhs.uk/clinics-and-services/student-services/",
+      linkTitle: "QMUL Students",
+      category: "home",
+    },
+    {
+      linkId: "5",
+      linkUrl:
+        "https://www.suttonswharfhealthcentre.nhs.uk/clinics-and-services/appointments-tests-referrals/referral-for-further-care/",
+      linkTitle: "NHS self referral",
+      category: "home",
+    },
+    {
+      linkId: "6",
+      linkUrl:
+        "https://www.suttonswharfhealthcentre.nhs.uk/about-us/have-your-say/friends-and-family-test/",
+      linkTitle: "Feedback & Surveys",
+      category: "home",
+    },
+  ];
+  return Response.json(links);
+};

@@ -1,0 +1,7 @@
+[[edge_functions]]
+function = "links"
+path = "/api/links"
+
+[[edge_functions]]
+function = "analytics"
+path = "/api/analytics"
