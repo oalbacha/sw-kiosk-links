@@ -142,7 +142,11 @@ export default async (request, context) => {
     if (!linkId) {
       return new Response("linkId is required", { status: 400 });
     }
-    let count = (await store.get(linkId)) || 0;
+    const currentValue = await store.get(linkId);
+    // Parse as integer to ensure numeric addition, not string concatenation
+    let count = currentValue !== null && currentValue !== undefined 
+      ? parseInt(currentValue, 10) || 0 
+      : 0;
     await store.set(linkId, count + 1);
     return new Response("OK");
   } else if (request.method === "GET") {
