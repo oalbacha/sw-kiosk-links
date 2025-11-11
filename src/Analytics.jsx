@@ -100,7 +100,11 @@ function Analytics() {
   }
 
   const entries = Object.entries(analytics || {});
-  const totalClicks = entries.reduce((sum, [_, count]) => sum + count, 0);
+  // Handle both old format (just count) and new format (object with count, title, url)
+  const totalClicks = entries.reduce((sum, [_, data]) => {
+    const count = typeof data === 'number' ? data : (data?.count || 0);
+    return sum + count;
+  }, 0);
   const totalLinks = entries.length;
   const avgClicks = totalLinks > 0 ? Math.round(totalClicks / totalLinks) : 0;
 
@@ -134,22 +138,34 @@ function Analytics() {
               <thead>
                 <tr>
                   <th>Link ID</th>
+                  <th>Link Title</th>
                   <th>Click Count</th>
                 </tr>
               </thead>
               <tbody>
                 {entries
-                  .sort((a, b) => b[1] - a[1])
-                  .map(([linkId, count]) => (
-                    <tr key={linkId}>
-                      <td>
-                        <span className="link-id">{linkId}</span>
-                      </td>
-                      <td>
-                        <span className="count">{count}</span>
-                      </td>
-                    </tr>
-                  ))}
+                  .sort((a, b) => {
+                    const countA = typeof a[1] === 'number' ? a[1] : (a[1]?.count || 0);
+                    const countB = typeof b[1] === 'number' ? b[1] : (b[1]?.count || 0);
+                    return countB - countA;
+                  })
+                  .map(([linkId, data]) => {
+                    const count = typeof data === 'number' ? data : (data?.count || 0);
+                    const title = typeof data === 'object' && data?.title ? data.title : `Link ${linkId}`;
+                    return (
+                      <tr key={linkId}>
+                        <td>
+                          <span className="link-id">{linkId}</span>
+                        </td>
+                        <td>
+                          <span className="link-title">{title}</span>
+                        </td>
+                        <td>
+                          <span className="count">{count}</span>
+                        </td>
+                      </tr>
+                    );
+                  })}
               </tbody>
             </table>
           </>

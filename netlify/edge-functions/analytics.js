@@ -3,6 +3,16 @@ import { getStore } from "@netlify/blobs";
 const API_KEY = Netlify.env.get("MY_API_KEY") || "";
 const CLERK_SECRET_KEY = Netlify.env.get("CLERK_SECRET_KEY") || "";
 
+// Links data - matches links.json
+const LINKS_DATA = {
+  "1": { linkTitle: "Clinical care Accurx", linkUrl: "https://accurx.nhs.uk/patient-initiated/F84123" },
+  "2": { linkTitle: "NHS App", linkUrl: "https://www.nhs.uk/nhs-app" },
+  "3": { linkTitle: "Our website", linkUrl: "https://www.suttonswharfhealthcentre.nhs.uk/" },
+  "4": { linkTitle: "QMUL Students", linkUrl: "https://www.suttonswharfhealthcentre.nhs.uk/clinics-and-services/student-services/" },
+  "5": { linkTitle: "NHS self referral", linkUrl: "https://www.suttonswharfhealthcentre.nhs.uk/clinics-and-services/appointments-tests-referrals/referral-for-further-care/" },
+  "6": { linkTitle: "Feedback & Surveys", linkUrl: "https://www.suttonswharfhealthcentre.nhs.uk/about-us/have-your-say/friends-and-family-test/" },
+};
+
 // Helper to decode base64 in edge functions
 function base64Decode(str) {
   // Edge functions support atob
@@ -147,9 +157,9 @@ export default async (request, context) => {
     // Handle both string and number types from the store
     let count = 0;
     if (currentValue !== null && currentValue !== undefined) {
-      if (typeof currentValue === 'number') {
+      if (typeof currentValue === "number") {
         count = currentValue;
-      } else if (typeof currentValue === 'string') {
+      } else if (typeof currentValue === "string") {
         count = parseInt(currentValue, 10) || 0;
       } else {
         count = Number(currentValue) || 0;
@@ -234,13 +244,23 @@ export default async (request, context) => {
 
       const analytics = {};
 
+      // Helper function to add analytics entry with title
+      function addAnalyticsEntry(key, count) {
+        const linkInfo = LINKS_DATA[key];
+        analytics[key] = {
+          count: parseInt(count, 10) || 0,
+          title: linkInfo ? linkInfo.linkTitle : `Link ${key}`,
+          url: linkInfo ? linkInfo.linkUrl : null,
+        };
+      }
+
       // Netlify Blobs list() returns an object with blobs array
       if (allData && allData.blobs && Array.isArray(allData.blobs)) {
         console.log("Found blobs array with", allData.blobs.length, "entries");
         for (const blob of allData.blobs) {
           const key = blob.key;
           const count = await store.get(key);
-          analytics[key] = parseInt(count) || 0;
+          addAnalyticsEntry(key, count);
           console.log(`Processed ${key}: ${count}`);
         }
       } else if (Array.isArray(allData)) {
@@ -249,7 +269,7 @@ export default async (request, context) => {
         for (const entry of allData) {
           const key = entry.key || entry;
           const count = await store.get(key);
-          analytics[key] = parseInt(count) || 0;
+          addAnalyticsEntry(key, count);
         }
       } else if (allData && typeof allData[Symbol.iterator] === "function") {
         // If it's iterable
@@ -257,7 +277,7 @@ export default async (request, context) => {
         for (const entry of allData) {
           const key = entry.key || entry;
           const count = await store.get(key);
-          analytics[key] = parseInt(count) || 0;
+          addAnalyticsEntry(key, count);
         }
       } else {
         console.warn("Unexpected allData format:", allData);
@@ -271,7 +291,7 @@ export default async (request, context) => {
             console.log(`Key ${key} value:`, count, typeof count);
             // Always add the key, even if count is null/undefined (will be 0)
             if (count !== null && count !== undefined) {
-              analytics[key] = parseInt(count, 10) || 0;
+              addAnalyticsEntry(key, count);
             } else {
               // Key doesn't exist yet, don't add it to analytics
               console.log(`Key ${key} does not exist in store`);
@@ -291,7 +311,7 @@ export default async (request, context) => {
           if (listResult && listResult.blobs) {
             for (const blob of listResult.blobs) {
               const count = await store.get(blob.key);
-              analytics[blob.key] = parseInt(count) || 0;
+              addAnalyticsEntry(blob.key, count);
             }
           }
         } catch (e) {
