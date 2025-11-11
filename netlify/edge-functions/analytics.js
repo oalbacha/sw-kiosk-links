@@ -263,13 +263,18 @@ export default async (request, context) => {
         console.warn("Unexpected allData format:", allData);
         // Fallback: Try to get known keys directly
         // This is a workaround if list() doesn't work as expected
+        // Also try to get any keys that might have been stored
         const knownKeys = ["1", "2", "3", "4", "5", "6"];
         for (const key of knownKeys) {
           try {
             const count = await store.get(key);
             console.log(`Key ${key} value:`, count, typeof count);
+            // Always add the key, even if count is null/undefined (will be 0)
             if (count !== null && count !== undefined) {
-              analytics[key] = parseInt(count) || 0;
+              analytics[key] = parseInt(count, 10) || 0;
+            } else {
+              // Key doesn't exist yet, don't add it to analytics
+              console.log(`Key ${key} does not exist in store`);
             }
           } catch (e) {
             console.error(`Error getting key ${key}:`, e);
