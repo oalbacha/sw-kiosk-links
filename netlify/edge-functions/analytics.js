@@ -242,13 +242,36 @@ export default async (request, context) => {
         }
       } else {
         console.warn("Unexpected allData format:", allData);
-        // Try to get known keys directly
+        // Fallback: Try to get known keys directly
+        // This is a workaround if list() doesn't work as expected
         const knownKeys = ["1", "2", "3", "4", "5", "6"];
         for (const key of knownKeys) {
-          const count = await store.get(key);
-          if (count !== null && count !== undefined) {
-            analytics[key] = parseInt(count) || 0;
+          try {
+            const count = await store.get(key);
+            console.log(`Key ${key} value:`, count, typeof count);
+            if (count !== null && count !== undefined) {
+              analytics[key] = parseInt(count) || 0;
+            }
+          } catch (e) {
+            console.error(`Error getting key ${key}:`, e);
           }
+        }
+      }
+      
+      // If still empty, try listing with pagination
+      if (Object.keys(analytics).length === 0) {
+        console.log("Analytics still empty, trying list with options");
+        try {
+          const listResult = await store.list({ paginate: true });
+          console.log("List with paginate returned:", listResult);
+          if (listResult && listResult.blobs) {
+            for (const blob of listResult.blobs) {
+              const count = await store.get(blob.key);
+              analytics[blob.key] = parseInt(count) || 0;
+            }
+          }
+        } catch (e) {
+          console.error("Error with paginated list:", e);
         }
       }
 
