@@ -216,9 +216,22 @@
       <div class="content">
         <div id="loginContainer" class="login-container">
           <h2 id="loginTitle">Please log in to view analytics</h2>
-          <p id="loginMessage">You need to be authenticated to access the analytics data.</p>
-          <div id="inviteMessage" style="display: none; background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 20px; color: #1976d2;">
-            <strong>Setting up your account?</strong> Click the button below to set your password.
+          <p id="loginMessage">
+            You need to be authenticated to access the analytics data.
+          </p>
+          <div
+            id="inviteMessage"
+            style="
+              display: none;
+              background: #e3f2fd;
+              padding: 15px;
+              border-radius: 8px;
+              margin-bottom: 20px;
+              color: #1976d2;
+            "
+          >
+            <strong>Setting up your account?</strong> Click the button below to
+            set your password.
           </div>
           <div
             style="
@@ -304,16 +317,23 @@
             } else {
               // Check if there's an invite token
               const hash = window.location.hash;
-              if (hash.includes("invite_token") || hash.includes("confirmation_token")) {
+              if (
+                hash.includes("invite_token") ||
+                hash.includes("confirmation_token")
+              ) {
                 // Show invite message and highlight signup button
-                document.getElementById("inviteMessage").style.display = "block";
-                document.getElementById("loginTitle").textContent = "Set up your account";
-                document.getElementById("loginMessage").textContent = "Click 'Sign Up / Set Password' below to complete your account setup.";
+                document.getElementById("inviteMessage").style.display =
+                  "block";
+                document.getElementById("loginTitle").textContent =
+                  "Set up your account";
+                document.getElementById("loginMessage").textContent =
+                  "Click 'Sign Up / Set Password' below to complete your account setup.";
                 const signupBtn = document.getElementById("signupButton");
-                signupBtn.style.background = "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
+                signupBtn.style.background =
+                  "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
                 signupBtn.style.color = "white";
                 signupBtn.style.border = "none";
-                
+
                 // Widget should auto-open, but if it doesn't, open it after a brief delay
                 setTimeout(() => {
                   if (!window.netlifyIdentity.currentUser()) {
@@ -450,7 +470,23 @@
 
         try {
           // Get the JWT token
-          const token = await user.jwt();
+          let token;
+          try {
+            token = await user.jwt();
+          } catch (jwtError) {
+            console.error("Error getting JWT token:", jwtError);
+            showError("Error getting authentication token. Please try logging out and back in.");
+            showLogin();
+            return;
+          }
+
+          if (!token) {
+            showError("No authentication token available. Please try logging out and back in.");
+            showLogin();
+            return;
+          }
+
+          console.log("Fetching analytics with token:", token ? "present" : "missing");
 
           const response = await fetch("/api/analytics", {
             headers: {
@@ -459,13 +495,17 @@
           });
 
           if (response.status === 401) {
-            showError("Unauthorized. Please log in again.");
-            window.netlifyIdentity?.logout();
+            const errorText = await response.text();
+            showError(`Unauthorized: ${errorText || "Please log in again."}`);
+            console.error("Auth failed. Token:", token ? "present" : "missing");
+            // Don't logout automatically - let user try again
+            showLogin();
             return;
           }
 
           if (!response.ok) {
-            throw new Error(`Failed to load analytics: ${response.statusText}`);
+            const errorText = await response.text();
+            throw new Error(`Failed to load analytics: ${response.statusText} - ${errorText}`);
           }
 
           const data = await response.json();
