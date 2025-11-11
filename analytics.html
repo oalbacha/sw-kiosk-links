@@ -217,23 +217,47 @@
         <div id="loginContainer" class="login-container">
           <h2>Please log in to view analytics</h2>
           <p>You need to be authenticated to access the analytics data.</p>
-          <button
-            onclick="if(window.netlifyIdentity) { window.netlifyIdentity.open('login'); } else { alert('Netlify Identity is loading, please wait...'); }"
+          <div
             style="
-              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-              color: white;
-              border: none;
-              padding: 12px 24px;
-              border-radius: 6px;
-              font-size: 16px;
-              cursor: pointer;
+              display: flex;
+              gap: 10px;
+              justify-content: center;
               margin-top: 20px;
-              font-weight: 600;
-              transition: transform 0.2s;
             "
           >
-            Log In
-          </button>
+            <button
+              onclick="if(window.netlifyIdentity) { window.netlifyIdentity.open('login'); } else { alert('Netlify Identity is loading, please wait...'); }"
+              style="
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                border: none;
+                padding: 12px 24px;
+                border-radius: 6px;
+                font-size: 16px;
+                cursor: pointer;
+                font-weight: 600;
+                transition: transform 0.2s;
+              "
+            >
+              Log In
+            </button>
+            <button
+              onclick="if(window.netlifyIdentity) { window.netlifyIdentity.open('signup'); } else { alert('Netlify Identity is loading, please wait...'); }"
+              style="
+                background: white;
+                color: #667eea;
+                border: 2px solid #667eea;
+                padding: 12px 24px;
+                border-radius: 6px;
+                font-size: 16px;
+                cursor: pointer;
+                font-weight: 600;
+                transition: transform 0.2s;
+              "
+            >
+              Sign Up
+            </button>
+          </div>
           <div id="netlify-identity-widget"></div>
         </div>
 
