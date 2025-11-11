@@ -296,6 +296,71 @@ export default async (request, context) => {
         }
       );
     }
+  } else if (request.method === "DELETE") {
+    // DELETE requires authentication (API key or Clerk)
+    const authenticated = await isAuthenticated(request, context);
+    if (!authenticated) {
+      return new Response(
+        JSON.stringify({
+          error: "Unauthorized",
+          message: "Authentication required to clear analytics",
+        }),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    try {
+      // Get all keys from the store
+      const allData = await store.list();
+      let keysToDelete = [];
+
+      // Extract keys from different return types
+      if (allData && allData.blobs && Array.isArray(allData.blobs)) {
+        keysToDelete = allData.blobs.map((blob) => blob.key);
+      } else if (Array.isArray(allData)) {
+        keysToDelete = allData.map((entry) => entry.key || entry);
+      } else if (allData && typeof allData[Symbol.iterator] === "function") {
+        keysToDelete = Array.from(allData).map((entry) => entry.key || entry);
+      } else {
+        // Fallback: try known keys
+        const knownKeys = ["1", "2", "3", "4", "5", "6"];
+        for (const key of knownKeys) {
+          const value = await store.get(key);
+          if (value !== null && value !== undefined) {
+            keysToDelete.push(key);
+          }
+        }
+      }
+
+      // Delete all keys
+      let deletedCount = 0;
+      for (const key of keysToDelete) {
+        await store.delete(key);
+        deletedCount++;
+      }
+
+      console.log(`Cleared ${deletedCount} analytics entries`);
+      return Response.json({
+        success: true,
+        message: `Cleared ${deletedCount} analytics entries`,
+        deletedCount,
+      });
+    } catch (error) {
+      console.error("Error clearing analytics:", error);
+      return new Response(
+        JSON.stringify({
+          error: "Internal Server Error",
+          message: error.message || "An error occurred",
+        }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
   }
 
   return new Response("Method not allowed", { status: 405 });
