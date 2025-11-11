@@ -208,32 +208,50 @@ export default async (request, context) => {
         );
       }
 
+      // Get all blobs from the store
+      // Netlify Blobs list() returns a list result that needs to be iterated
       const allData = await store.list();
-      console.log("store.list() returned:", typeof allData, allData);
-      
+      console.log("store.list() returned:", typeof allData, JSON.stringify(allData));
+
       const analytics = {};
-      
-      // Handle different return types from store.list()
-      let entries = [];
-      if (Array.isArray(allData)) {
-        entries = allData;
-      } else if (allData && allData.entries && Array.isArray(allData.entries)) {
-        entries = allData.entries;
-      } else if (allData && typeof allData[Symbol.iterator] === 'function') {
-        entries = Array.from(allData);
+
+      // Netlify Blobs list() returns an object with blobs array
+      if (allData && allData.blobs && Array.isArray(allData.blobs)) {
+        console.log("Found blobs array with", allData.blobs.length, "entries");
+        for (const blob of allData.blobs) {
+          const key = blob.key;
+          const count = await store.get(key);
+          analytics[key] = parseInt(count) || 0;
+          console.log(`Processed ${key}: ${count}`);
+        }
+      } else if (Array.isArray(allData)) {
+        // If it's directly an array
+        console.log("Found array with", allData.length, "entries");
+        for (const entry of allData) {
+          const key = entry.key || entry;
+          const count = await store.get(key);
+          analytics[key] = parseInt(count) || 0;
+        }
+      } else if (allData && typeof allData[Symbol.iterator] === "function") {
+        // If it's iterable
+        console.log("Found iterable");
+        for (const entry of allData) {
+          const key = entry.key || entry;
+          const count = await store.get(key);
+          analytics[key] = parseInt(count) || 0;
+        }
       } else {
         console.warn("Unexpected allData format:", allData);
-        entries = [];
+        // Try to get known keys directly
+        const knownKeys = ["1", "2", "3", "4", "5", "6"];
+        for (const key of knownKeys) {
+          const count = await store.get(key);
+          if (count !== null && count !== undefined) {
+            analytics[key] = parseInt(count) || 0;
+          }
+        }
       }
-      
-      console.log("Processing entries, count:", entries.length);
-      
-      for (const entry of entries) {
-        const key = entry.key || entry;
-        const count = await store.get(key);
-        analytics[key] = parseInt(count) || 0;
-      }
-      
+
       console.log("Analytics data prepared:", analytics);
       return Response.json(analytics);
     } catch (error) {
