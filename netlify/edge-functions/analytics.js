@@ -211,7 +211,11 @@ export default async (request, context) => {
       // Get all blobs from the store
       // Netlify Blobs list() returns a list result that needs to be iterated
       const allData = await store.list();
-      console.log("store.list() returned:", typeof allData, JSON.stringify(allData));
+      console.log(
+        "store.list() returned:",
+        typeof allData,
+        JSON.stringify(allData)
+      );
 
       const analytics = {};
 
@@ -257,7 +261,7 @@ export default async (request, context) => {
           }
         }
       }
-      
+
       // If still empty, try listing with pagination
       if (Object.keys(analytics).length === 0) {
         console.log("Analytics still empty, trying list with options");
