@@ -157,7 +157,8 @@ export default async (request, context) => {
     }
     const newCount = count + 1;
     console.log(`Incrementing linkId ${linkId}: ${count} -> ${newCount}`);
-    await store.set(linkId, newCount);
+    // Store as string to ensure proper persistence with Netlify Blobs
+    await store.set(linkId, String(newCount));
     return new Response("OK");
   } else if (request.method === "GET") {
     try {
