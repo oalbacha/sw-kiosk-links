@@ -1,3 +1,9 @@
+[build]
+  publish = "."
+
+[identity]
+  enabled = true
+
 [[edge_functions]]
 function = "links"
 path = "/api/links"
