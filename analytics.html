@@ -289,33 +289,69 @@
     </div>
 
     <script>
+      // Check for invite token in URL
+      const hash = window.location.hash;
+      const hasInviteToken = hash.includes('invite_token') || hash.includes('confirmation_token');
+      
       // Initialize Netlify Identity
-      if (window.netlifyIdentity) {
-        // Initialize with the site URL
-        window.netlifyIdentity.init();
+      function initIdentity() {
+        if (window.netlifyIdentity) {
+          // Initialize with the site URL
+          window.netlifyIdentity.init();
 
-        window.netlifyIdentity.on("init", (user) => {
-          if (user) {
+          window.netlifyIdentity.on("init", (user) => {
+            // If there's an invite token, the widget should automatically process it
+            // Give it a moment to process, then check if we need to open it
+            if (hasInviteToken && !user) {
+              // The widget should automatically show the password setup form
+              // But if it doesn't, we'll open it after a short delay
+              setTimeout(() => {
+                if (!window.netlifyIdentity.currentUser()) {
+                  // Try opening signup to trigger the invite flow
+                  window.netlifyIdentity.open('signup');
+                }
+              }, 500);
+            } else if (user) {
+              loadAnalytics();
+            } else {
+              showLogin();
+            }
+          });
+          
+          // Also listen for the invite event
+          window.netlifyIdentity.on("invite", () => {
+            // Widget is processing invite, it should show password form
+          });
+
+          window.netlifyIdentity.on("login", (user) => {
+            window.netlifyIdentity.close();
             loadAnalytics();
-          } else {
+          });
+
+          window.netlifyIdentity.on("signup", (user) => {
+            // After signup/password setup, close and load analytics
+            window.netlifyIdentity.close();
+            if (user) {
+              loadAnalytics();
+            }
+          });
+
+          window.netlifyIdentity.on("logout", () => {
             showLogin();
-          }
-        });
+          });
+        } else {
+          // If widget hasn't loaded yet, wait for it
+          setTimeout(initIdentity, 100);
+        }
+      }
 
-        window.netlifyIdentity.on("login", (user) => {
-          window.netlifyIdentity.close();
-          loadAnalytics();
-        });
-
-        window.netlifyIdentity.on("logout", () => {
-          showLogin();
-        });
+      // Start initialization
+      if (window.netlifyIdentity) {
+        initIdentity();
       } else {
-        // If widget hasn't loaded yet, wait for it
-        document.addEventListener("DOMContentLoaded", function () {
-          if (window.netlifyIdentity) {
-            window.netlifyIdentity.init();
-          }
+        // Wait for script to load
+        window.addEventListener("load", function () {
+          initIdentity();
         });
       }
 
